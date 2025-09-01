@@ -1,74 +1,73 @@
 import json
 
-def load_data(file_path: str) -> list:
+
+def load_data(file_path):
     """
-    Load a JSON file and return its content as a Python list.
+    Load a JSON file and return its content.
     
     :param file_path: Path to the JSON file
-    :return: List containing data from the JSON file
+    :return: Parsed JSON data as Python objects
     """
     with open(file_path, "r") as handle:
         return json.load(handle)
 
 
-def generate_animal_cards(data: list) -> str:
+def serialize_animal(animal_obj):
     """
-    Serialize each animal's data into an HTML list item with proper styling.
-    Handles optional fields gracefully.
-
-    :param data: List of animal dictionaries
-    :return: HTML string containing all animal cards
+    Serialize a single animal object into an HTML list item.
+    
+    Includes the animal's name, diet, first location, and type if available.
+    
+    :param animal_obj: Dictionary containing animal data
+    :return: HTML string for the animal
     """
-    output = ""
-    for animal in data:
-        output += '<li class="cards__item">\n'
-        output += f'  <div class="card__title">{animal.get("name")}</div>\n'
-        output += '  <p class="card__text">\n'
+    output = '<li class="cards__item">\n'
+    output += f'  <div class="card__title">{animal_obj.get("name", "")}</div>\n'
+    output += '  <p class="card__text">\n'
 
-        # Diet (required)
-        diet = animal.get("characteristics", {}).get("diet")
-        if diet:
-            output += f'      <strong>Diet:</strong> {diet}<br/>\n'
+    characteristics = animal_obj.get("characteristics", {})
 
-        # Location (take the first if exists)
-        locations = animal.get("locations")
-        if locations and len(locations) > 0:
-            output += f'      <strong>Location:</strong> {locations[0]}<br/>\n'
+    # Diet
+    if "diet" in characteristics:
+        output += f'      <strong>Diet:</strong> {characteristics["diet"]}<br/>\n'
 
-        # Type (optional, handle case differences)
-        animal_type = animal.get("characteristics", {}).get("type") or \
-                      animal.get("characteristics", {}).get("Type")
-        if animal_type:
-            output += f'      <strong>Type:</strong> {animal_type}<br/>\n'
+    # Location (take the first if exists)
+    locations = animal_obj.get("locations", [])
+    if locations:
+        output += f'      <strong>Location:</strong> {locations[0]}<br/>\n'
 
-        output += '  </p>\n'
-        output += '</li>\n'
+    # Type (check main dictionary first, then characteristics)
+    animal_type = animal_obj.get("type") or characteristics.get("type")
+    if animal_type:
+        output += f'      <strong>Type:</strong> {animal_type}<br/>\n'
 
+    output += '  </p>\n'
+    output += '</li>\n'
     return output
 
 
 def main():
     """
-    Main function to read the template, inject animal cards, and save the final HTML.
+    Main function to generate HTML file with all animals' data.
     """
-    # Load data
+    # Load JSON data
     animals_data = load_data("animals_data.json")
 
-    # Generate HTML cards
-    animal_cards_html = generate_animal_cards(animals_data)
-
-    # Read HTML template
+    # Read the HTML template
     with open("animals_template.html", "r") as template_file:
-        template_content = template_file.read()
+        template_html = template_file.read()
 
-    # Replace placeholder with generated HTML
-    final_html = template_content.replace("__REPLACE_ANIMALS_INFO__", animal_cards_html)
+    # Generate HTML content for all animals
+    animals_html = ""
+    for animal in animals_data:
+        animals_html += serialize_animal(animal)
 
-    # Write final HTML to a new file
+    # Replace placeholder in template
+    final_html = template_html.replace("__REPLACE_ANIMALS_INFO__", animals_html)
+
+    # Write the final HTML to a new file
     with open("animals.html", "w") as output_file:
         output_file.write(final_html)
-
-    print("HTML file generated successfully: animals.html")
 
 
 if __name__ == "__main__":

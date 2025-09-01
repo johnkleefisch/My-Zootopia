@@ -1,12 +1,14 @@
 import json
 
-
 def load_data(file_path):
     """
-    Load a JSON file and return its content.
-    
-    :param file_path: Path to the JSON file
-    :return: Parsed JSON data as Python objects
+    Load a JSON file and return the data as a Python object.
+
+    Args:
+        file_path (str): Path to the JSON file.
+
+    Returns:
+        list: List of animal dictionaries.
     """
     with open(file_path, "r") as handle:
         return json.load(handle)
@@ -14,61 +16,63 @@ def load_data(file_path):
 
 def serialize_animal(animal_obj):
     """
-    Serialize a single animal object into an HTML list item.
-    
-    Includes the animal's name, diet, first location, and type if available.
-    
-    :param animal_obj: Dictionary containing animal data
-    :return: HTML string for the animal
+    Serialize a single animal dictionary into an HTML card string.
+
+    Args:
+        animal_obj (dict): Animal information.
+
+    Returns:
+        str: HTML string representing the animal card.
     """
     output = '<li class="cards__item">\n'
-    output += f'  <div class="card__title">{animal_obj.get("name", "")}</div>\n'
+    output += f'  <div class="card__title">{animal_obj.get("name", "Unknown")}</div>\n'
     output += '  <p class="card__text">\n'
 
     characteristics = animal_obj.get("characteristics", {})
-
-    # Diet
+    
     if "diet" in characteristics:
         output += f'      <strong>Diet:</strong> {characteristics["diet"]}<br/>\n'
-
-    # Location (take the first if exists)
-    locations = animal_obj.get("locations", [])
-    if locations:
-        output += f'      <strong>Location:</strong> {locations[0]}<br/>\n'
-
-    # Type (check main dictionary first, then characteristics)
-    animal_type = animal_obj.get("type") or characteristics.get("type")
-    if animal_type:
-        output += f'      <strong>Type:</strong> {animal_type}<br/>\n'
+    if "locations" in characteristics and characteristics["locations"]:
+        output += f'      <strong>Location:</strong> {characteristics["locations"][0]}<br/>\n'
+    if "type" in characteristics:
+        output += f'      <strong>Type:</strong> {characteristics["type"]}<br/>\n'
+    
+    # Bonus fields
+    if "lifespan" in characteristics:
+        output += f'      <strong>Lifespan:</strong> {characteristics["lifespan"]}<br/>\n'
+    if "weight" in characteristics:
+        output += f'      <strong>Weight:</strong> {characteristics["weight"]}<br/>\n'
+    if "height" in characteristics:
+        output += f'      <strong>Height:</strong> {characteristics["height"]}<br/>\n'
 
     output += '  </p>\n'
     output += '</li>\n'
     return output
 
 
-def main():
+def generate_html(animals_data, template_path, output_path):
     """
-    Main function to generate HTML file with all animals' data.
+    Generate a full HTML page from animal data and a template.
+
+    Args:
+        animals_data (list): List of animal dictionaries.
+        template_path (str): Path to the HTML template.
+        output_path (str): Path to write the generated HTML.
     """
-    # Load JSON data
-    animals_data = load_data("animals_data.json")
+    with open(template_path, "r") as file:
+        template_content = file.read()
 
-    # Read the HTML template
-    with open("animals_template.html", "r") as template_file:
-        template_html = template_file.read()
-
-    # Generate HTML content for all animals
-    animals_html = ""
+    output = ''
     for animal in animals_data:
-        animals_html += serialize_animal(animal)
+        output += serialize_animal(animal)
 
-    # Replace placeholder in template
-    final_html = template_html.replace("__REPLACE_ANIMALS_INFO__", animals_html)
+    final_html = template_content.replace("__REPLACE_ANIMALS_INFO__", output)
 
-    # Write the final HTML to a new file
-    with open("animals.html", "w") as output_file:
-        output_file.write(final_html)
+    with open(output_path, "w") as file:
+        file.write(final_html)
 
 
 if __name__ == "__main__":
-    main()
+    animals_data = load_data("animals_data.json")
+    generate_html(animals_data, "animals_template.html", "animals.html")
+    print("HTML generated successfully: animals.html")

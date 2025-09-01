@@ -1,47 +1,53 @@
 import json
 
-
 def load_data(file_path: str) -> list:
-    """Loads data from a JSON file."""
-    with open(file_path, "r", encoding="utf-8") as handle:
-        return json.load(handle)
+    """
+    Load JSON data from a given file path.
 
+    Args:
+        file_path (str): Path to the JSON file.
 
-def generate_animals_string(animals: list) -> str:
-    """Generates a string with animal info for HTML output."""
-    output = ""
-    for animal in animals:
-        if "name" in animal:
-            output += f"Name: {animal['name']}\n"
-        if "diet" in animal:
-            output += f"Diet: {animal['diet']}\n"
-        if "locations" in animal and animal["locations"]:
-            output += f"Location: {animal['locations'][0]}\n"
-        if "type" in animal:
-            output += f"Type: {animal['type']}\n"
-        output += "\n"  # blank line between animals
-    return output
+    Returns:
+        list: A list of animal dictionaries loaded from JSON.
+    """
+    with open(file_path, "r") as file:
+        return json.load(file)
 
+# Load animal data from JSON
+animals_data = load_data("animals_data.json")
 
-def generate_html(template_path: str, animals_output: str, output_path: str) -> None:
-    """Reads template, replaces placeholder, and writes final HTML file."""
-    with open(template_path, "r", encoding="utf-8") as template_file:
-        template_content = template_file.read()
+# Generate HTML cards for each animal
+animals_html = ""
+for animal in animals_data:
+    animals_html += '<li class="cards__item">\n'
 
-    # Replace the placeholder with our generated animal data
-    new_html_content = template_content.replace("__REPLACE_ANIMALS_INFO__", animals_output)
+    # Add animal name if present
+    if "name" in animal:
+        animals_html += f"Name: {animal['name']}<br/>\n"
 
-    # Write the final HTML
-    with open(output_path, "w", encoding="utf-8") as output_file:
-        output_file.write(new_html_content)
+    # Add diet if available
+    if "characteristics" in animal and "diet" in animal["characteristics"]:
+        animals_html += f"Diet: {animal['characteristics']['diet']}<br/>\n"
 
+    # Add first location if available
+    if "locations" in animal and len(animal["locations"]) > 0:
+        animals_html += f"Location: {animal['locations'][0]}<br/>\n"
 
-if __name__ == "__main__":
-    # Step 1: Load JSON data
-    animals_data = load_data("animals_data.json")
+    # Add type if available
+    if "characteristics" in animal and "type" in animal["characteristics"]:
+        animals_html += f"Type: {animal['characteristics']['type']}<br/>\n"
 
-    # Step 2: Generate formatted string
-    animals_output = generate_animals_string(animals_data)
+    animals_html += "</li>\n"
 
-    # Step 3: Replace in HTML and save to new file
-    generate_html("animals_template.html", animals_output, "animals.html")
+# Read the HTML template
+with open("animals_template.html", "r") as template_file:
+    template_html = template_file.read()
+
+# Insert animal cards into the template
+final_html = template_html.replace("__REPLACE_ANIMALS_INFO__", animals_html)
+
+# Write the final HTML file
+with open("animals.html", "w") as output_file:
+    output_file.write(final_html)
+
+print("HTML generation complete: animals.html created successfully.")
